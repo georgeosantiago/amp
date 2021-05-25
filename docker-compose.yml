@@ -1,0 +1,73 @@
+version: '3'
+
+services:
+
+  apache:
+    restart: unless-stopped
+    container_name: apache  
+    image: bitnami/apache:latest        
+    hostname: apache
+    domainname: apache
+    depends_on:
+      - php-fpm
+    networks:
+      - app-tier
+    ports:
+      - 80:8080
+    volumes:
+      - ./server_block.conf:/vhosts/myapp.conf:ro
+      - ./html:/app
+      
+  nginx:
+    restart: unless-stopped
+    container_name: nginx  
+    image: bitnami/nginx:latest    
+    hostname: nginx
+    domainname: nginx
+    depends_on:
+      - php-fpm    
+    networks:
+      - app-tier
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nginx-vhost/server_block.conf:/opt/bitnami/nginx/conf/server_blocks/myapp.conf:ro
+      - ./html:/app
+
+  mariadb:
+    restart: unless-stopped  
+    container_name: mariadb 
+    image: bitnami/mariadb:latest       
+    hostname: mariadb
+    domainname: mariadb
+    user: "root"
+    networks:
+      - app-tier            
+    environment:
+      - MARIADB_ROOT_PASSWORD=1sushi
+    ports:
+      - 3306:3306
+    volumes:
+      - ./data:/bitnami/mariadb
+
+  php-fpm:
+    restart: unless-stopped  
+    image: bitnami/php-fpm:latest
+    hostname: php-fpm
+    domainname: php-fpm
+    depends_on:
+      - mariadb
+    networks:
+      - app-tier     
+    container_name: php-fpm
+ 
+    volumes:
+      - ./html:/app
+
+networks:
+  app-tier:
+    driver: bridge
+
+#volumes:
+#  mariadb_data:
+#    driver: local
